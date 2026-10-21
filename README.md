@@ -1,4 +1,4 @@
-# Lakhi Sahu & Arvind Gupta — Wedding Invitation Website
+# Lakhi Sahu & Arbind Gupta — Wedding Invitation Website
 
 A cinematic, interactive Indian wedding invitation website built with HTML5, CSS3, and vanilla JavaScript.
 
@@ -47,17 +47,11 @@ All placeholder images are in `assets/images/`. Simply replace any file with you
 
 ---
 
-## Adding Background Music
+## Background Music
 
-1. Create the folder `assets/audio/`.
-2. Place your MP3 file there named `wedding-music.mp3`.
-3. In `script.js`, locate the comment inside `initMusicToggle()`:
-   ```js
-   // audio.src = 'assets/audio/wedding-music.mp3';
-   ```
-4. Uncomment that line. The music toggle button (♪) in the top-right corner will now work.
-
-> **Note:** Music is user-activated only — it never autoplays.
+Background music is configured using `assets/audio/bchru.mp3`.
+- Music begins playing when the guest clicks **"Open Our Wedding Invitation"**.
+- Guests can pause or resume music anytime using the floating music toggle button (♪ / ♬) in the top-right corner.
 
 ---
 
@@ -160,4 +154,4 @@ wedding-invitation/
 
 ---
 
-*With love — Lakhi Sahu & Arvind Gupta · 24 November 2026 · Insuriya Bhavan, Dibrugarh*
+*With love — Lakhi Sahu & Arbind Gupta · 24 November 2026 · Insuriya Bhavan, Dibrugarh*

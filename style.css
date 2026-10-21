@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   LAKHI & ARVIND — WEDDING INVITATION
+   LAKHI & ARBIND — WEDDING INVITATION
    Cinematic Indian Wedding CSS
    ═══════════════════════════════════════════════════════════ */
 
@@ -916,6 +916,7 @@ ul { list-style: none; }
   display: flex;
   flex-direction: column;
   background: linear-gradient(160deg, #1a0d30, #0d1520);
+  z-index: 1;
 }
 .scratch-reveal-photo {
   flex: 1;
@@ -926,7 +927,7 @@ ul { list-style: none; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center top;
 }
 .scratch-reveal-text {
   padding: 1rem;
@@ -936,6 +937,7 @@ ul { list-style: none; }
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 2;
 }
 .scratch-reveal-heading {
   font-family: var(--font-elegant);
@@ -956,6 +958,9 @@ ul { list-style: none; }
   width: 100%;
   height: 100%;
   border-radius: 12px;
+  z-index: 3;
+  touch-action: none;
+  cursor: crosshair;
 }
 
 .scratch-cover-label {
@@ -966,13 +971,17 @@ ul { list-style: none; }
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  background: linear-gradient(160deg, #1a0b05, #2d1a08, #1a0b05);
+  background: rgba(20, 10, 5, 0.4);
+  backdrop-filter: blur(2px);
   border-radius: 12px;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.4s ease, visibility 0.4s;
   pointer-events: none;
-  z-index: 1;
+  z-index: 4;
 }
-.scratch-cover-label.hidden { opacity: 0; }
+.scratch-cover-label.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
 .scratch-floral-pattern {
   display: flex;
   gap: 0.5rem;
@@ -1037,16 +1046,32 @@ ul { list-style: none; }
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: repeat(6, 1fr);
   gap: 1.25rem;
-  max-width: 960px;
+  max-width: 1040px;
   width: 100%;
   margin: 0 auto;
 }
 
-.gallery-item-main {
-  grid-row: span 2;
+/* 5 Photos Layout: Row 1 = 2 photos (50% each), Row 2 = 3 photos (33.3% each) -> No column left empty */
+.gallery-item:nth-child(1),
+.gallery-item:nth-child(2) {
+  grid-column: span 3;
+}
+.gallery-item:nth-child(1) .gallery-frame,
+.gallery-item:nth-child(2) .gallery-frame {
+  height: 450px;
+}
+
+.gallery-item:nth-child(3),
+.gallery-item:nth-child(4),
+.gallery-item:nth-child(5) {
+  grid-column: span 2;
+}
+.gallery-item:nth-child(3) .gallery-frame,
+.gallery-item:nth-child(4) .gallery-frame,
+.gallery-item:nth-child(5) .gallery-frame {
+  height: 380px;
 }
 
 .gallery-item {
@@ -1058,16 +1083,34 @@ ul { list-style: none; }
 .gallery-frame {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: 380px;
   overflow: hidden;
 }
 .gallery-frame img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top; /* Anchors top so heads are never cut off */
+  transform-origin: center top; /* Zooms downwards without pushing heads out of frame */
   transition: transform 0.6s ease;
   filter: brightness(0.9) saturate(0.95);
 }
+.gallery-item:nth-child(1) .gallery-frame img {
+  object-position: center 10%;
+}
+.gallery-item:nth-child(2) .gallery-frame img {
+  object-position: center top;
+}
+.gallery-item:nth-child(3) .gallery-frame img {
+  object-position: center top;
+}
+.gallery-item:nth-child(4) .gallery-frame img {
+  object-position: center top;
+}
+.gallery-item:nth-child(5) .gallery-frame img {
+  object-position: center top;
+}
+
 .gallery-item:hover .gallery-frame img,
 .gallery-item:focus .gallery-frame img {
   transform: scale(1.05);
@@ -1937,11 +1980,27 @@ ul { list-style: none; }
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .gallery-grid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
-  .gallery-item-main { grid-column: span 2; grid-row: span 1; }
-  .gallery-item-main .gallery-frame { height: 300px; }
+  .gallery-item:nth-child(1) {
+    grid-column: span 2;
+  }
+  .gallery-item:nth-child(2),
+  .gallery-item:nth-child(3),
+  .gallery-item:nth-child(4),
+  .gallery-item:nth-child(5) {
+    grid-column: span 1;
+  }
+  .gallery-item:nth-child(1) .gallery-frame {
+    height: 360px;
+  }
+  .gallery-item:nth-child(2) .gallery-frame,
+  .gallery-item:nth-child(3) .gallery-frame,
+  .gallery-item:nth-child(4) .gallery-frame,
+  .gallery-item:nth-child(5) .gallery-frame {
+    height: 300px;
+  }
 
   .invitation-card { padding: 2.5rem 1.5rem; }
   .inv-corner { width: 35px; height: 35px; }
@@ -1965,9 +2024,23 @@ ul { list-style: none; }
 @media (max-width: 480px) {
   .gallery-grid {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
   }
-  .gallery-item-main { grid-column: span 1; }
-  .gallery-item-main .gallery-frame { height: 260px; }
+  .gallery-item:nth-child(1),
+  .gallery-item:nth-child(2),
+  .gallery-item:nth-child(3),
+  .gallery-item:nth-child(4),
+  .gallery-item:nth-child(5) {
+    grid-column: span 1;
+  }
+  .gallery-frame,
+  .gallery-item:nth-child(1) .gallery-frame,
+  .gallery-item:nth-child(2) .gallery-frame,
+  .gallery-item:nth-child(3) .gallery-frame,
+  .gallery-item:nth-child(4) .gallery-frame,
+  .gallery-item:nth-child(5) .gallery-frame {
+    height: 320px;
+  }
 
   .action-bar { flex-direction: column; align-items: stretch; }
   .action-bar .btn-outline { text-align: center; }

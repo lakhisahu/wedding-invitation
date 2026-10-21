@@ -1,5 +1,5 @@
 /**
- * Lakhi Sahu & Arvind Gupta — Wedding Invitation
+ * Lakhi Sahu & Arbind Gupta — Wedding Invitation
  * script.js — Vanilla JavaScript, no frameworks
  *
  * Sections:
@@ -344,6 +344,11 @@ function initDoorOpening() {
     // Ensure the announcement section is ready and visible before scrolling
     if (announcement) announcement.classList.add('section-visible');
 
+    // Start background wedding music
+    if (!state.musicPlaying) {
+      playMusic();
+    }
+
     // After the cinematic door swing completes, smoothly glide to announcement section
     const DOOR_DURATION = 1400; // ms
     setTimeout(() => {
@@ -466,140 +471,220 @@ function initScratchCard() {
 
   if (!canvas || !container) return;
 
-  const ctx = canvas.getContext('2d');
-  const DPR = window.devicePixelRatio || 1;
-  let rect;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const DPR = Math.max(window.devicePixelRatio || 1, 1);
+  let lastX = 0;
+  let lastY = 0;
+  let strokeCount = 0;
+  let canvasW = 0;
+  let canvasH = 0;
+
+  function drawScratchSurface(W, H) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Rich metallic gold/bronze scratch foil
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#3a1f0a');
+    grad.addColorStop(0.2, '#664213');
+    grad.addColorStop(0.4, '#c9993d');
+    grad.addColorStop(0.5, '#e8c76a');
+    grad.addColorStop(0.6, '#c9993d');
+    grad.addColorStop(0.8, '#664213');
+    grad.addColorStop(1, '#3a1f0a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative ornate foil border
+    ctx.strokeStyle = 'rgba(255, 230, 160, 0.7)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(12, 12, W - 24, H - 24);
+    ctx.strokeStyle = 'rgba(201, 153, 61, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(18, 18, W - 36, H - 36);
+
+    // Elegant diamond hatch pattern across foil
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = 1;
+    for (let x = -H; x < W + H; x += 24) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + H, H);
+      ctx.stroke();
+    }
+    for (let x = 0; x < W + 2 * H; x += 24) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x - H, H);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
 
   function setupCanvas() {
-    rect = container.getBoundingClientRect();
-    const W = rect.width;
-    const H = rect.height;
+    const rect = container.getBoundingClientRect();
+    const W = Math.round(rect.width) || container.clientWidth || 320;
+    const H = Math.round(rect.height) || container.clientHeight || 420;
 
+    if (W <= 0 || H <= 0) return;
+
+    canvasW = W;
+    canvasH = H;
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
-    canvas.width = W * DPR;
-    canvas.height = H * DPR;
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
 
-    state.scratchTotalPixels = W * H;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(DPR, DPR);
+
     state.scratchRevealed = false;
     state.scratchIsDrawing = false;
+    strokeCount = 0;
 
     drawScratchSurface(W, H);
+
     if (coverLabel) {
       coverLabel.classList.remove('hidden');
       coverLabel.removeAttribute('aria-hidden');
     }
   }
 
-  function drawScratchSurface(W, H) {
-    // Rich ornate brown/gold scratch surface
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#2d1505');
-    grad.addColorStop(0.3, '#3d1f08');
-    grad.addColorStop(0.5, '#4a2510');
-    grad.addColorStop(0.7, '#3d1f08');
-    grad.addColorStop(1, '#2d1505');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX = e.clientX;
+    let clientY = e.clientY;
 
-    // Gold border pattern on scratch surface
-    ctx.strokeStyle = 'rgba(201,153,61,0.5)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(10, 10, W - 20, H - 20);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(16, 16, W - 32, H - 32);
-
-    // Decorative diagonal hatching
-    ctx.strokeStyle = 'rgba(201,153,61,0.08)';
-    ctx.lineWidth = 1;
-    for (let i = -H; i < W + H; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i + H, H);
-      ctx.stroke();
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
     }
-  }
 
-  function getEventPos(e) {
-    rect = container.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return {
       x: clientX - rect.left,
       y: clientY - rect.top,
     };
   }
 
-  function scratch(e) {
-    if (!state.scratchIsDrawing) return;
-    const { x, y } = getEventPos(e);
-
+  function eraseCircle(x, y, radius = 32) {
+    ctx.save();
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(x, y, 28, 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
 
-    // Check reveal percentage
-    checkRevealPercentage();
+  function eraseLine(x1, y1, x2, y2, radius = 32) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = radius * 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function checkRevealPercentage() {
     if (state.scratchRevealed) return;
-    const W = canvas.width / DPR;
-    const H = canvas.height / DPR;
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let transparent = 0;
-    const data = imageData.data;
-    // Sample every 4th pixel for performance
-    for (let i = 3; i < data.length; i += 16) {
-      if (data[i] < 20) transparent++;
-    }
-    const sampledTotal = data.length / 16;
-    const pct = transparent / sampledTotal;
+    try {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      let transparent = 0;
+      const step = 64; // Sample every 16th pixel
+      for (let i = 3; i < data.length; i += step) {
+        if (data[i] < 40) transparent++;
+      }
+      const totalSampled = data.length / step;
+      const pct = transparent / totalSampled;
 
-    if (pct > 0.55) {
-      fullyReveal();
+      if (pct > 0.40) {
+        fullyReveal();
+      }
+    } catch (err) {
+      console.warn('Scratch check error:', err);
     }
   }
 
   function fullyReveal() {
     state.scratchRevealed = true;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillRect(0, 0, canvasW * DPR, canvasH * DPR);
+    ctx.restore();
+
     if (coverLabel) {
       coverLabel.classList.add('hidden');
       coverLabel.setAttribute('aria-hidden', 'true');
     }
+    showToast('✨ Surprise revealed! Lakhi & Arbind');
   }
 
-  function onPointerDown(e) {
+  function handleStart(e) {
+    if (state.scratchRevealed) return;
     state.scratchIsDrawing = true;
+    const pos = getPos(e);
+    lastX = pos.x;
+    lastY = pos.y;
+
+    if (coverLabel && !coverLabel.classList.contains('hidden')) {
+      coverLabel.classList.add('hidden');
+    }
+
+    eraseCircle(pos.x, pos.y, 30);
     e.preventDefault();
-    scratch(e);
-  }
-  function onPointerMove(e) {
-    if (!state.scratchIsDrawing) return;
-    e.preventDefault();
-    scratch(e);
-  }
-  function onPointerUp() {
-    state.scratchIsDrawing = false;
   }
 
-  // Mouse events
-  canvas.addEventListener('mousedown', onPointerDown);
-  canvas.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerUp);
+  function handleMove(e) {
+    if (!state.scratchIsDrawing || state.scratchRevealed) return;
+    const pos = getPos(e);
+    eraseLine(lastX, lastY, pos.x, pos.y, 30);
+    lastX = pos.x;
+    lastY = pos.y;
 
-  // Touch events — prevent scrolling while scratching
-  canvas.addEventListener('touchstart', onPointerDown, { passive: false });
-  canvas.addEventListener('touchmove', onPointerMove, { passive: false });
-  canvas.addEventListener('touchend', onPointerUp, { passive: true });
+    strokeCount++;
+    if (strokeCount % 8 === 0) {
+      checkRevealPercentage();
+    }
+    e.preventDefault();
+  }
+
+  function handleEnd() {
+    if (state.scratchIsDrawing) {
+      state.scratchIsDrawing = false;
+      checkRevealPercentage();
+    }
+  }
+
+  // Pointer events (modern unified mouse/touch/stylus API)
+  canvas.addEventListener('pointerdown', (e) => {
+    handleStart(e);
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  canvas.addEventListener('pointermove', handleMove);
+  canvas.addEventListener('pointerup', (e) => {
+    handleEnd();
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+  });
+  canvas.addEventListener('pointercancel', (e) => {
+    handleEnd();
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  // Touch fallback prevention for scrolling gestures on the card
+  canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+  canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
   // Reset button
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      ctx.globalCompositeOperation = 'source-over';
       setupCanvas();
     });
   }
@@ -607,11 +692,20 @@ function initScratchCard() {
   // Initial setup
   setupCanvas();
 
-  // Resize observer to keep canvas in sync
+  // Watch for visibility or dimension changes without wiping out active scratches
   if (typeof ResizeObserver !== 'undefined') {
-    const ro = new ResizeObserver(() => {
-      ctx.globalCompositeOperation = 'source-over';
-      setupCanvas();
+    let prevW = 0;
+    let prevH = 0;
+    const ro = new ResizeObserver((entries) => {
+      if (state.scratchRevealed || state.scratchIsDrawing) return;
+      for (const entry of entries) {
+        const cr = entry.contentRect;
+        if (Math.abs(cr.width - prevW) > 15 || Math.abs(cr.height - prevH) > 15) {
+          prevW = cr.width;
+          prevH = cr.height;
+          setupCanvas();
+        }
+      }
     });
     ro.observe(container);
   }
@@ -807,16 +901,16 @@ function generateICS() {
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Lakhi & Arvind Wedding//EN',
+    'PRODID:-//Lakhi & Arbind Wedding//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    'UID:lakhi-arvind-wedding-20261124@wedding-invitation',
+    'UID:lakhi-arbind-wedding-20261124@wedding-invitation',
     'DTSTAMP:' + formatICSDate(new Date()),
     'DTSTART;VALUE=DATE:20261124',
     'DTEND;VALUE=DATE:20261125',
-    'SUMMARY:Wedding of Lakhi Sahu & Arvind Gupta',
-    'DESCRIPTION:You are cordially invited to the wedding of Lakhi Sahu and Arvind Gupta.\\nVenue: Insuriya Bhavan\\, Dibrugarh\\, Assam\\, India\\nDate: Tuesday\\, 24 November 2026',
+    'SUMMARY:Wedding of Lakhi Sahu & Arbind Gupta',
+    'DESCRIPTION:Wedding Celebrations of Lakhi Sahu & Arbind Gupta\\n\\nEvents:\\n• Haldi Ceremony: Saturday, 21 November 2026 (Bride\'s Residence)\\n• Mehendi Ceremony: Monday, 23 November 2026 (Bride\'s Residence)\\n• Wedding Ceremony: Tuesday, 24 November 2026 (Insuriya Bhavan, Dibrugarh, Assam)',
     'LOCATION:Insuriya Bhavan\\, Dibrugarh\\, Assam\\, India',
     'TRANSP:OPAQUE',
     'STATUS:CONFIRMED',
@@ -837,7 +931,7 @@ function downloadICS() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'Lakhi-Arvind-Wedding-24-November-2026.ics';
+  a.download = 'Lakhi-Arbind-Wedding-24-November-2026.ics';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -860,8 +954,8 @@ function initCalendarButtons() {
    ═══════════════════════════════════════════════════════════ */
 async function shareInvitation() {
   const shareData = {
-    title: 'Lakhi Sahu & Arvind Gupta — Wedding Invitation',
-    text: 'You are cordially invited to the wedding of Lakhi Sahu and Arvind Gupta on 24 November 2026 at Insuriya Bhavan, Dibrugarh, Assam. 💛',
+    title: 'Lakhi Sahu & Arbind Gupta — Wedding Invitation',
+    text: 'You are cordially invited to the wedding of Lakhi Sahu and Arbind Gupta on 24 November 2026 at Insuriya Bhavan, Dibrugarh, Assam. 💛',
     url: window.location.href,
   };
 
@@ -916,50 +1010,65 @@ function initShareButtons() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   14. MUSIC TOGGLE STUB
+   14. MUSIC TOGGLE & AUDIO
    ═══════════════════════════════════════════════════════════ */
-function initMusicToggle() {
+let bgAudio = null;
+
+function getBgAudio() {
+  if (!bgAudio) {
+    bgAudio = qs('#bg-audio') || new Audio('assets/audio/bchru.mp3');
+    bgAudio.loop = true;
+    bgAudio.volume = 0.4;
+    bgAudio.onerror = () => {
+      pauseMusic();
+      showToast('♪ Unable to load audio file');
+    };
+  }
+  return bgAudio;
+}
+
+function playMusic() {
+  const audio = getBgAudio();
   const btn = qs('#music-toggle');
   const icon = btn?.querySelector('.music-icon');
+
+  audio.play().then(() => {
+    state.musicPlaying = true;
+    btn?.classList.add('playing');
+    if (icon) icon.textContent = '♬';
+  }).catch((err) => {
+    console.warn('Audio playback prevented or deferred:', err);
+  });
+}
+
+function pauseMusic() {
+  if (bgAudio) {
+    bgAudio.pause();
+  }
+  state.musicPlaying = false;
+  const btn = qs('#music-toggle');
+  const icon = btn?.querySelector('.music-icon');
+  btn?.classList.remove('playing');
+  if (icon) icon.textContent = '♪';
+}
+
+function initMusicToggle() {
+  const btn = qs('#music-toggle');
   if (!btn) return;
 
-  // No audio asset bundled — this is a user-activated stub.
-  // Replace the <audio> tag and src once you have a music file.
-  let audio = null;
-
   btn.addEventListener('click', () => {
-    if (!audio) {
-      // Try to create audio from an asset if one exists
-      audio = new Audio();
-      audio.loop = true;
-      audio.volume = 0.35;
-      // Set the src here when you have a music file:
-      // audio.src = 'assets/audio/wedding-music.mp3';
-      audio.onerror = () => {
-        showToast('♪ Add a music file to assets/audio/ to enable music');
-        audio = null;
-        state.musicPlaying = false;
-        btn.classList.remove('playing');
-        if (icon) icon.textContent = '♪';
-      };
-    }
-
     if (state.musicPlaying) {
-      audio.pause();
-      state.musicPlaying = false;
-      btn.classList.remove('playing');
-      if (icon) icon.textContent = '♪';
+      pauseMusic();
     } else {
-      if (audio.src && audio.src !== window.location.href) {
-        audio.play().catch(() => {
-          showToast('♪ Add a music file to assets/audio/ to enable music');
-        });
+      const audio = getBgAudio();
+      audio.play().then(() => {
         state.musicPlaying = true;
         btn.classList.add('playing');
+        const icon = btn.querySelector('.music-icon');
         if (icon) icon.textContent = '♬';
-      } else {
-        showToast('♪ Add a music file to assets/audio/ to enable music');
-      }
+      }).catch(() => {
+        showToast('♪ Tap to play music');
+      });
     }
   });
 }
@@ -1029,7 +1138,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sr = document.createElement('p');
   sr.className = 'sr-only';
   sr.setAttribute('aria-live', 'polite');
-  sr.textContent = 'Wedding invitation loaded for Lakhi Sahu and Arvind Gupta, 24 November 2026, Insuriya Bhavan, Dibrugarh.';
+  sr.textContent = 'Wedding invitation loaded for Lakhi Sahu and Arbind Gupta, 24 November 2026, Insuriya Bhavan, Dibrugarh.';
   document.body.appendChild(sr);
   setTimeout(() => sr.remove(), 5000);
 });
